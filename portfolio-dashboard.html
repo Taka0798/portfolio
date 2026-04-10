@@ -35,7 +35,7 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
 .event-date{font-size:11px;color:#7F77DD;min-width:84px;flex-shrink:0;}
 .event-text{font-size:13px;color:#c4baff;flex:1;}
 .event-tag{font-size:10px;padding:3px 8px;border-radius:5px;flex-shrink:0;}
-.tag-s{background:#1a2e1a;color:#4ade80;}.tag-c{background:#1e1a30;color:#a78bfa;}
+.tag-s{background:#1a2e1a;color:#4ade80;}.tag-c{background:#1e1a30;color:#a78bfa;}.tag-m{background:#1e1a2a;color:#60a5fa;}.tag-e{background:#1a2518;color:#86efac;}
 .movers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
 .mover{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:13px;cursor:pointer;transition:background .15s;}
 .mover:hover{background:#17152a;}
@@ -124,9 +124,10 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
     Taka's Portfolio
     <span class="badge badge-purple">AUD</span>
     <span class="badge badge-green">CoinSpot</span>
-    <span class="badge badge-purple">CommSec / Yahoo Finance</span>
+    <span class="badge badge-purple">FMP</span>
     <span class="clock" id="clock"></span>
   </h1>
+
 
   <div class="tabs">
     <button class="tab active" onclick="switchTab('overview')">Overview</button>
@@ -175,12 +176,19 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
     </div>
     <div class="events-card">
       <h3>Key upcoming dates</h3>
-      <div class="event-row"><span class="event-date">Apr 10, 2026</span><span class="event-text">US CPI inflation data release</span><span class="event-tag tag-s">Stocks</span></div>
-      <div class="event-row"><span class="event-date">Apr 16, 2026</span><span class="event-text">Bitcoin halving anniversary — volatility watch</span><span class="event-tag tag-c">Crypto</span></div>
-      <div class="event-row"><span class="event-date">Apr 23, 2026</span><span class="event-text">Fed FOMC interest rate decision</span><span class="event-tag tag-s">Stocks</span></div>
-      <div class="event-row"><span class="event-date">Apr 30, 2026</span><span class="event-text">Ethereum Fusaka network upgrade expected</span><span class="event-tag tag-c">Crypto</span></div>
-      <div class="event-row"><span class="event-date">May 2, 2026</span><span class="event-text">US Non-Farm Payrolls report</span><span class="event-tag tag-s">Stocks</span></div>
-      <div class="event-row"><span class="event-date">May 7, 2026</span><span class="event-text">Apple &amp; Amazon earnings reports</span><span class="event-tag tag-s">Stocks</span></div>
+      <div class="event-row"><span class="event-date">Apr 23, 2026</span><span class="event-text">Amazon earnings — cloud &amp; AI infrastructure spend; key signal for NDQ &amp; QQQ ETFs</span><span class="event-tag tag-s">US Tech</span></div>
+      <div class="event-row"><span class="event-date">Apr 28, 2026</span><span class="event-text">Alphabet &amp; Tesla earnings — Google AI capex + Tesla energy/EV; watch for dip entry</span><span class="event-tag tag-s">US Tech</span></div>
+      <div class="event-row"><span class="event-date">Apr 30, 2026</span><span class="event-text">Apple earnings — strong beats lift Nasdaq ETFs; weak beats create dip opportunities</span><span class="event-tag tag-s">US Tech</span></div>
+      <div class="event-row"><span class="event-date">May 2, 2026</span><span class="event-text">US Non-Farm Payrolls — drives Fed rate expectations; directly impacts tech &amp; growth ETFs</span><span class="event-tag tag-m">Macro</span></div>
+      <div class="event-row"><span class="event-date">May 4–5, 2026</span><span class="event-text">RBA rate decision — cash rate at 4.10%, another hike likely; watch ASX resources &amp; growth stocks</span><span class="event-tag tag-s">ASX</span></div>
+      <div class="event-row"><span class="event-date">Mid May, 2026</span><span class="event-text">NVIDIA earnings — the biggest AI/semiconductor print of the year; moves all tech ETFs globally</span><span class="event-tag tag-s">US Tech</span></div>
+      <div class="event-row"><span class="event-date">May, 2026</span><span class="event-text">China NPC follow-up stimulus signals — directly drives iron ore &amp; copper prices (BHP, RIO, FMG)</span><span class="event-tag tag-m">Mining</span></div>
+      <div class="event-row"><span class="event-date">May–Jun, 2026</span><span class="event-text">China monthly PMI data releases — factory activity is the #1 lead indicator for ASX miners</span><span class="event-tag tag-m">Mining</span></div>
+      <div class="event-row"><span class="event-date">Jun, 2026</span><span class="event-text">ASX ex-dividend dates — BHP, RIO, FMG, CBA, NAB pay out; classic entry window before record date</span><span class="event-tag tag-s">ASX</span></div>
+      <div class="event-row"><span class="event-date">Jun–Jul, 2026</span><span class="event-text">Global clean energy policy updates — EU taxonomy, US IRA renewables spending; affects ETFs &amp; energy stocks</span><span class="event-tag tag-e">Energy</span></div>
+      <div class="event-row"><span class="event-date">Jul–Aug, 2026</span><span class="event-text">ASX full-year reporting season — BHP, RIO, FMG, Woodside, Santos full-year results; biggest ASX event</span><span class="event-tag tag-s">ASX</span></div>
+      <div class="event-row"><span class="event-date">Ongoing</span><span class="event-text">Copper price watch — AI data centres &amp; energy transition driving structural deficit; key for BHP &amp; RIO</span><span class="event-tag tag-m">Mining</span></div>
+      <div class="event-row"><span class="event-date">Ongoing</span><span class="event-text">USD/AUD exchange rate — affects returns on all US &amp; international holdings; watch Fed vs RBA divergence</span><span class="event-tag tag-m">Macro</span></div>
     </div>
   </div>
 
@@ -486,44 +494,73 @@ async function fetchFxRate() {
   } catch(e){}
 }
 
-// ── Yahoo Finance quote fetcher ───────────────────────────────────
-async function yahooQuote(syms) {
+// ── FMP quote fetcher ────────────────────────────────────────────
+const FMP_KEY = 'KRJdGjZ3Lh3Q5G3t58jZPSxNvyDdL1BE';
+
+async function fmpQuote(syms) {
   if (!syms.length) return [];
-  try {
-    const r = await fetch(
-      'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms.join(',')),
-      {mode:'cors'}
-    );
-    if (r.ok) {
-      const d = await r.json();
-      return d?.quoteResponse?.result || [];
-    }
-  } catch(e){}
-  return [];
+  const results = [];
+  const chunks = [];
+  for (let i = 0; i < syms.length; i += 50) chunks.push(syms.slice(i, i+50));
+  for (const chunk of chunks) {
+    try {
+      const url = 'https://financialmodelingprep.com/stable/quote?symbol='+encodeURIComponent(chunk.join(','))+'&apikey='+FMP_KEY;
+      const r = await fetch(url);
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d)) results.push(...d);
+      }
+    } catch(e){}
+  }
+  return results;
 }
 
-// ── Fetch market movers (top 3 / bottom 3 from large cap pool) ────
+function fmpToInternal(q) {
+  return {
+    symbol:                     q.symbol,
+    shortName:                  q.name || q.companyName || q.symbol,
+    longName:                   q.name || q.companyName || q.symbol,
+    regularMarketPrice:         q.price || q.previousClose || 0,
+    regularMarketChangePercent: q.changesPercentage || q.changePercent || q.percentChange || 0,
+    currency:                   q.currency || 'USD',
+    fullExchangeName:           q.exchange || q.exchangeShortName || q.stockExchange || '',
+    exchange:                   q.exchange || q.exchangeShortName || q.stockExchange || '',
+  };
+}
+
+async function yahooQuote(syms) {
+  const raw = await fmpQuote(syms);
+  return raw.map(fmpToInternal);
+}
+
+// ── Fetch market movers — real top/bottom 3 from FMP ─────────────
 async function fetchMarketMovers() {
-  const quotes = await yahooQuote(MOVER_POOL);
-  if (!quotes.length) {
-    document.getElementById('mkt-top').innerHTML = moverPlaceholder();
-    document.getElementById('mkt-bot').innerHTML = moverPlaceholder();
-    return;
-  }
-  const mapped = quotes.map(q => ({
-    sym:      q.symbol,
-    name:     q.shortName || q.longName || q.symbol,
-    price:    toAUD(q.regularMarketPrice, q.currency),
-    change:   +q.regularMarketChangePercent.toFixed(2),
-    currency: q.currency,
-  })).filter(q => q.change !== null);
-
-  const sorted = [...mapped].sort((a,b) => b.change - a.change);
-  const top3 = sorted.slice(0,3);
-  const bot3 = sorted.slice(-3).reverse();
-
-  document.getElementById('mkt-top').innerHTML = top3.map(q => moverCard(q,'top')).join('');
-  document.getElementById('mkt-bot').innerHTML = bot3.map(q => moverCard(q,'bot')).join('');
+  try {
+    const [gainRes, loseRes] = await Promise.all([
+      fetch('https://financialmodelingprep.com/stable/market-biggest-gainers?apikey='+FMP_KEY),
+      fetch('https://financialmodelingprep.com/stable/market-biggest-losers?apikey='+FMP_KEY),
+    ]);
+    if (gainRes.ok && loseRes.ok) {
+      const gainers = await gainRes.json();
+      const losers  = await loseRes.json();
+      // Handle both array response and {gainers:[]} object response
+      const gArr = Array.isArray(gainers) ? gainers : (gainers.gainers || gainers.mostGainerStock || []);
+      const lArr = Array.isArray(losers)  ? losers  : (losers.losers  || losers.mostLoserStock  || []);
+      const mapMover = q => ({
+        sym:    q.symbol || q.ticker,
+        name:   q.name || q.companyName || q.symbol,
+        price:  toAUD(parseFloat(q.price||q.currentPrice||0), 'USD'),
+        change: +(parseFloat(q.changesPercentage||q.changePercent||q.change||0)).toFixed(2),
+      });
+      const top3 = gArr.slice(0,3).map(mapMover);
+      const bot3 = lArr.slice(0,3).map(mapMover);
+      document.getElementById('mkt-top').innerHTML = top3.length ? top3.map(q=>moverCard(q,'top')).join('') : moverPlaceholder();
+      document.getElementById('mkt-bot').innerHTML = bot3.length ? bot3.map(q=>moverCard(q,'bot')).join('') : moverPlaceholder();
+      return;
+    }
+  } catch(e){ console.error('Movers error:', e); }
+  document.getElementById('mkt-top').innerHTML = moverPlaceholder();
+  document.getElementById('mkt-bot').innerHTML = moverPlaceholder();
 }
 
 function moverCard(q, cls) {
@@ -543,11 +580,14 @@ async function fetchPopular() {
   const syms = POPULAR.map(p => p.sym);
   const quotes = await yahooQuote(syms);
   quotes.forEach(q => {
+    if (!q.symbol) return;
+    const price = parseFloat(q.regularMarketPrice) || 0;
+    const chg   = parseFloat(q.regularMarketChangePercent) || 0;
     popularData[q.symbol] = {
-      price:    q.regularMarketPrice,
-      change:   +q.regularMarketChangePercent.toFixed(2),
-      currency: q.currency,
-      audPrice: toAUD(q.regularMarketPrice, q.currency),
+      price:    price,
+      change:   +chg.toFixed(2),
+      currency: q.currency || 'USD',
+      audPrice: toAUD(price, q.currency || 'USD'),
     };
   });
   renderPopular();
@@ -604,18 +644,17 @@ async function searchStock() {
     if (quotes.length) {
       found = quotes;
     } else {
-      // Fall back to autocomplete
-      const r = await fetch(
-        'https://query1.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(raw)+'&quotesCount=8&newsCount=0',
-        {mode:'cors'}
-      );
-      if (r.ok) {
-        const d = await r.json();
-        const hits = (d?.quotes||[]).filter(q=>q.quoteType&&q.quoteType!=='FUTURE').slice(0,6);
-        if (hits.length) {
-          found = await yahooQuote(hits.map(h=>h.symbol));
+      // Fall back to FMP name/symbol search
+      try {
+        const sr = await fetch('https://financialmodelingprep.com/stable/search-symbol?query='+encodeURIComponent(raw)+'&limit=8&apikey='+FMP_KEY);
+        if (sr.ok) {
+          const hits = await sr.json();
+          if (Array.isArray(hits) && hits.length) {
+            const syms = (Array.isArray(hits) ? hits : []).map(h=>h.symbol).filter(Boolean).slice(0,6);
+            found = await yahooQuote(syms);
+          }
         }
-      }
+      } catch(e){}
     }
   } catch(e){}
 
@@ -623,8 +662,8 @@ async function searchStock() {
     resultsEl.innerHTML = '<div class="search-status">No results for "'+raw+'". For ASX stocks add .AX (e.g. BHP.AX). For ETFs try the full ticker.</div>';
   } else {
     const rows = found.map(q => {
-      const audP  = toAUD(q.regularMarketPrice, q.currency);
-      const chg   = +q.regularMarketChangePercent.toFixed(2);
+      const audP  = toAUD(q.regularMarketPrice || 0, q.currency || 'USD');
+      const chg   = +(q.regularMarketChangePercent || 0).toFixed(2);
       const name  = q.longName || q.shortName || q.symbol;
       const exch  = q.fullExchangeName || q.exchange || '';
       const label = stockHoldings[q.symbol] ? 'Update' : '+ Add';
@@ -881,10 +920,10 @@ fetchFxRate().then(() => {
 });
 fetchCrypto();
 
-setInterval(fetchCrypto,           30000);
-setInterval(refreshHoldingPrices,  60000);
-setInterval(fetchMarketMovers,     60000);
-setInterval(fetchPopular,         120000);
+setInterval(fetchCrypto,          30000);   // crypto stays at 30s (CoinSpot, no request limit)
+setInterval(refreshHoldingPrices, 360000);  // holdings every 6 mins
+setInterval(fetchMarketMovers,    360000);  // movers every 6 mins
+setInterval(fetchPopular,         720000);  // popular grid every 12 mins
 </script>
 </body>
 </html>

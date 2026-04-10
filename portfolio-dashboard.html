@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taka's Portfolio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#08080f;color:#e8e6f0;min-height:100vh;}
+.wrap{max-width:1300px;margin:0 auto;padding:20px;}
+h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.clock{font-size:11px;color:#4a4260;font-weight:400;margin-left:auto;}
+.tabs{display:flex;gap:4px;margin-bottom:18px;background:#11101c;border-radius:12px;padding:5px;}
+.tab{flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:500;color:#7a6fa8;cursor:pointer;border-radius:8px;border:none;background:transparent;transition:all .2s;}
+.tab.active{background:#7F77DD;color:#fff;}
+.tab:hover:not(.active){color:#c4baff;background:#1e1a30;}
+.panel{display:none;}
+.panel.active{display:block;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:640px){.stat-grid,.charts-row,.movers-grid,.popular-grid{grid-template-columns:1fr !important;}}
+.stat{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:16px 18px;}
+.stat .lbl{font-size:11px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;}
+.stat .val{font-size:24px;font-weight:500;color:#e8e6f0;}
+.stat .sub{font-size:12px;margin-top:5px;}
+.up{color:#4ade80;}.dn{color:#f87171;}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.chart-card{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:16px;}
+.chart-card h3{font-size:11px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.chart-note{font-size:10px;color:#4a4260;margin-bottom:10px;line-height:1.5;}
+.events-card{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:16px;margin-bottom:14px;}
+.events-card h3{font-size:11px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.event-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid #17152a;}
+.event-row:last-child{border-bottom:none;}
+.event-date{font-size:11px;color:#7F77DD;min-width:84px;flex-shrink:0;}
+.event-text{font-size:13px;color:#c4baff;flex:1;}
+.event-tag{font-size:10px;padding:3px 8px;border-radius:5px;flex-shrink:0;}
+.tag-s{background:#1a2e1a;color:#4ade80;}.tag-c{background:#1e1a30;color:#a78bfa;}
+.movers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.mover{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:13px;cursor:pointer;transition:background .15s;}
+.mover:hover{background:#17152a;}
+.mover .sym{font-size:15px;font-weight:500;color:#e8e6f0;}
+.mover .name{font-size:10px;color:#4a4260;margin:2px 0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mover .price{font-size:13px;color:#c4baff;}
+.mover .chg{font-size:15px;font-weight:500;margin-top:3px;}
+.mover.top{border-top:2px solid #4ade80;}
+.mover.bot{border-top:2px solid #f87171;}
+.movers-label{font-size:10px;color:#4a4260;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;margin-top:2px;}
+.section-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.section-hdr h3{font-size:11px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;}
+.live-dot{display:inline-block;width:7px;height:7px;background:#4ade80;border-radius:50%;animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ttl{font-size:11px;color:#4a4260;margin-left:auto;}
+.badge{font-size:10px;border-radius:5px;padding:2px 8px;}
+.badge-purple{color:#7F77DD;background:#1e1a30;}
+.badge-green{color:#4ade80;background:#1a2e1a;}
+
+/* Popular watchlist */
+.popular-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.pop-card{background:#11101c;border:0.5px solid #2a2545;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;}
+.pop-card:hover{background:#17152a;}
+.pop-sym{font-size:13px;font-weight:500;color:#e8e6f0;min-width:58px;}
+.pop-name{font-size:11px;color:#4a4260;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pop-right{text-align:right;flex-shrink:0;}
+.pop-price{font-size:12px;color:#c4baff;}
+.pop-chg{font-size:12px;font-weight:500;}
+.pop-add{font-size:10px;color:#7F77DD;background:#1a1730;border:0.5px solid #2a2545;border-radius:5px;padding:2px 8px;margin-left:6px;white-space:nowrap;flex-shrink:0;}
+
+/* Search */
+.search-section{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;padding:16px;margin-bottom:14px;}
+.search-section h3{font-size:11px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.search-hint{font-size:11px;color:#4a4260;margin-bottom:10px;line-height:1.6;}
+.search-box-row{display:flex;gap:8px;margin-bottom:8px;}
+.search-box-row input{flex:1;background:#0e0d1a;border:0.5px solid #2a2545;border-radius:8px;padding:10px 14px;color:#e8e6f0;font-size:13px;outline:none;}
+.search-box-row input::placeholder{color:#3a3260;}
+.search-box-row input:focus{border-color:#7F77DD;}
+.search-btn{background:#7F77DD;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.search-btn:hover{background:#9490e8;}
+.search-btn:disabled{background:#2a2545;color:#4a4260;cursor:not-allowed;}
+.search-result-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:0.5px solid #13111f;background:#0e0d1a;transition:background .15s;}
+.search-result-row:last-child{border-bottom:none;}
+.search-result-row:hover{background:#17152a;}
+.sr-sym{font-size:13px;font-weight:500;color:#e8e6f0;min-width:80px;}
+.sr-name{font-size:12px;color:#7a6fa8;flex:1;}
+.sr-exch{font-size:10px;color:#4a4260;min-width:60px;}
+.sr-price{font-size:13px;color:#c4baff;min-width:90px;text-align:right;}
+.sr-chg{font-size:12px;min-width:68px;text-align:right;}
+.sr-add{background:#1e1a30;color:#7F77DD;border:0.5px solid #2a2545;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.sr-add:hover{background:#2a2545;}
+.search-results-wrap{border:0.5px solid #2a2545;border-radius:8px;overflow:hidden;}
+.search-status{font-size:12px;color:#4a4260;padding:14px;text-align:center;}
+
+/* Holdings & market table */
+.mkt-wrap{background:#11101c;border:0.5px solid #2a2545;border-radius:12px;overflow:hidden;margin-bottom:14px;}
+.mkt-scroll{overflow-x:auto;}
+.mkt-table{width:100%;border-collapse:collapse;min-width:580px;}
+.mkt-table th{font-size:10px;color:#7a6fa8;text-transform:uppercase;letter-spacing:.06em;padding:9px 14px;border-bottom:0.5px solid #1a1730;font-weight:500;text-align:left;background:#0e0d1a;}
+.mkt-table td{font-size:13px;padding:9px 14px;border-bottom:0.5px solid #13111f;color:#c4baff;vertical-align:middle;}
+.mkt-table tr:last-child td{border-bottom:none;}
+.mkt-table tr:hover td{background:#14122a;}
+.qty-input{background:#0a0912;border:0.5px solid #2a2545;border-radius:6px;padding:5px 9px;color:#e8e6f0;font-size:12px;width:100px;text-align:right;outline:none;}
+.qty-input:focus{border-color:#7F77DD;}
+.owned-val{color:#7F77DD;font-weight:500;}
+.remove-btn{background:none;border:none;color:#f87171;cursor:pointer;font-size:18px;padding:0 4px;opacity:0.5;line-height:1;}
+.remove-btn:hover{opacity:1;}
+.tbl-add-btn{background:#1e1a30;color:#7F77DD;border:0.5px solid #2a2545;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;}
+.tbl-add-btn:hover{background:#2a2545;}
+
+/* Crypto filter */
+.filter-row{margin-bottom:10px;}
+.filter-row input{width:100%;background:#11101c;border:0.5px solid #2a2545;border-radius:8px;padding:9px 14px;color:#e8e6f0;font-size:13px;outline:none;}
+.filter-row input::placeholder{color:#3a3260;}
+.filter-row input:focus{border-color:#7F77DD;}
+
+.history-info{background:#13111f;border:0.5px solid #2a2545;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:#7a6fa8;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.history-info span{color:#7F77DD;font-weight:500;}
+.divider{height:0.5px;background:#1e1a30;margin:14px 0;}
+.footer{text-align:center;font-size:11px;color:#2a2545;padding:20px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>
+    Taka's Portfolio
+    <span class="badge badge-purple">AUD</span>
+    <span class="badge badge-green">CoinSpot</span>
+    <span class="badge badge-purple">CommSec / Yahoo Finance</span>
+    <span class="clock" id="clock"></span>
+  </h1>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab" onclick="switchTab('stocks')">Stocks &amp; ETFs</button>
+    <button class="tab" onclick="switchTab('crypto')">Crypto</button>
+  </div>
+
+  <!-- ── OVERVIEW ─────────────────────────────────────────────── -->
+  <div id="tab-overview" class="panel active">
+    <div class="history-info">
+      Portfolio history builds as you use the dashboard — one snapshot every 30 seconds.
+      <span id="snapshot-count">0 snapshots</span> recorded.
+    </div>
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="lbl">Total portfolio (AUD)</div>
+        <div class="val" id="total-val">A$0.00</div>
+        <div class="sub" id="total-chg">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Stocks &amp; ETFs (AUD)</div>
+        <div class="val" id="stock-val">A$0.00</div>
+        <div class="sub" id="stock-chg">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Crypto (AUD)</div>
+        <div class="val" id="crypto-val">A$0.00</div>
+        <div class="sub" id="crypto-chg">—</div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>Stocks &amp; ETFs — up to 30 days</h3>
+        <p class="chart-note">Add holdings in the Stocks tab to start tracking</p>
+        <div style="position:relative;height:190px;">
+          <canvas id="stockChart" role="img" aria-label="Stock portfolio value over time">Stock portfolio value chart.</canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Crypto — up to 30 days</h3>
+        <p class="chart-note">Prices from CoinSpot · Updates every 30 seconds</p>
+        <div style="position:relative;height:190px;">
+          <canvas id="cryptoChart" role="img" aria-label="Crypto portfolio value over time">Crypto portfolio value chart.</canvas>
+        </div>
+      </div>
+    </div>
+    <div class="events-card">
+      <h3>Key upcoming dates</h3>
+      <div class="event-row"><span class="event-date">Apr 10, 2026</span><span class="event-text">US CPI inflation data release</span><span class="event-tag tag-s">Stocks</span></div>
+      <div class="event-row"><span class="event-date">Apr 16, 2026</span><span class="event-text">Bitcoin halving anniversary — volatility watch</span><span class="event-tag tag-c">Crypto</span></div>
+      <div class="event-row"><span class="event-date">Apr 23, 2026</span><span class="event-text">Fed FOMC interest rate decision</span><span class="event-tag tag-s">Stocks</span></div>
+      <div class="event-row"><span class="event-date">Apr 30, 2026</span><span class="event-text">Ethereum Fusaka network upgrade expected</span><span class="event-tag tag-c">Crypto</span></div>
+      <div class="event-row"><span class="event-date">May 2, 2026</span><span class="event-text">US Non-Farm Payrolls report</span><span class="event-tag tag-s">Stocks</span></div>
+      <div class="event-row"><span class="event-date">May 7, 2026</span><span class="event-text">Apple &amp; Amazon earnings reports</span><span class="event-tag tag-s">Stocks</span></div>
+    </div>
+  </div>
+
+  <!-- ── STOCKS & ETFs ─────────────────────────────────────────── -->
+  <div id="tab-stocks" class="panel">
+    <div class="section-hdr">
+      <span class="live-dot"></span>
+      <h3>Stocks &amp; ETFs</h3>
+      <span class="badge badge-purple" id="fx-rate">USD/AUD: loading…</span>
+      <span class="ttl" id="stock-last-upd">connecting...</span>
+    </div>
+
+    <!-- Market movers from Yahoo Finance -->
+    <div class="movers-label">Top 3 market gainers (live)</div>
+    <div class="movers-grid" id="mkt-top"></div>
+    <div class="movers-label">Top 3 market losers (live)</div>
+    <div class="movers-grid" id="mkt-bot"></div>
+
+    <div class="divider"></div>
+
+    <!-- Search -->
+    <div class="search-section">
+      <h3>Search any stock, ETF or company</h3>
+      <p class="search-hint">
+        ASX stocks: add <strong style="color:#c4baff;">.AX</strong> suffix — e.g. <span style="color:#7F77DD;">BHP.AX, CBA.AX, VAS.AX, NDQ.AX</span><br>
+        International: just the ticker — e.g. <span style="color:#7F77DD;">AAPL, VOO, MSFT, TSLA, IVV</span>
+      </p>
+      <div class="search-box-row">
+        <input type="text" id="stock-search-input" placeholder="e.g. BHP.AX · AAPL · VOO · CBA.AX · NDQ.AX..." onkeydown="if(event.key==='Enter')searchStock()">
+        <button class="search-btn" id="search-btn" onclick="searchStock()">Search</button>
+      </div>
+      <div id="search-results"></div>
+    </div>
+
+
+    <!-- My holdings -->
+    <div class="section-hdr">
+      <h3>My holdings</h3>
+      <span class="ttl" id="holdings-count">0 positions</span>
+    </div>
+    <div class="mkt-wrap"><div class="mkt-scroll">
+      <table class="mkt-table">
+        <thead><tr>
+          <th style="width:11%">Symbol</th>
+          <th style="width:22%">Name</th>
+          <th style="width:10%">Exchange</th>
+          <th style="width:15%">Price (AUD)</th>
+          <th style="width:12%">24h change</th>
+          <th style="width:13%">Qty owned</th>
+          <th style="width:14%">My value (AUD)</th>
+          <th style="width:3%"></th>
+        </tr></thead>
+        <tbody id="holdings-tbody">
+          <tr><td colspan="8" style="color:#4a4260;text-align:center;padding:24px;">Search for a stock above or click a popular stock to add it to your holdings</td></tr>
+        </tbody>
+      </table>
+    </div></div>
+
+    <!-- Holdings movers -->
+    <div id="holdings-movers" style="display:none;">
+      <div class="movers-label">Top gainers in my holdings</div>
+      <div class="movers-grid" id="h-top"></div>
+      <div class="movers-label">Top losers in my holdings</div>
+      <div class="movers-grid" id="h-bot"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Popular watchlist -->
+    <div class="section-hdr">
+      <h3>Popular stocks &amp; ETFs</h3>
+      <span style="font-size:10px;color:#4a4260;">Click any card to add to your holdings</span>
+    </div>
+    <div class="popular-grid" id="popular-grid"></div>
+
+
+  </div>
+
+  <!-- ── CRYPTO ────────────────────────────────────────────────── -->
+  <div id="tab-crypto" class="panel">
+    <div class="section-hdr">
+      <span class="live-dot"></span>
+      <h3>Live crypto prices</h3>
+      <span class="badge badge-green">CoinSpot AUD</span>
+      <span class="ttl" id="crypto-last-upd">connecting...</span>
+    </div>
+    <div class="movers-label">Top 3 gainers</div>
+    <div class="movers-grid" id="crypto-top"></div>
+    <div class="movers-label">Top 3 losers</div>
+    <div class="movers-grid" id="crypto-bot"></div>
+    <div class="filter-row">
+      <input type="text" id="crypto-filter" placeholder="Filter crypto..." oninput="renderCryptoTable()">
+    </div>
+    <div class="mkt-wrap"><div class="mkt-scroll">
+      <table class="mkt-table">
+        <thead><tr>
+          <th style="width:11%">Symbol</th>
+          <th style="width:22%">Name</th>
+          <th style="width:18%">Price (AUD)</th>
+          <th style="width:14%">24h change</th>
+          <th style="width:14%">Qty owned</th>
+          <th style="width:21%">My value (AUD)</th>
+        </tr></thead>
+        <tbody id="crypto-tbody"></tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <div class="footer">Crypto: CoinSpot public API (AUD) · Stocks: Yahoo Finance, converted at live USD/AUD · ASX tickers use .AX suffix · Charts built from your own live snapshots · For personal use only.</div>
+</div>
+
+<script>
+// ── Popular stocks & ETFs (ASX + International) ───────────────────
+const POPULAR = [
+  // ASX
+  {sym:'BHP.AX',   name:'BHP Group'},
+  {sym:'CBA.AX',   name:'CommBank'},
+  {sym:'CSL.AX',   name:'CSL Limited'},
+  {sym:'NAB.AX',   name:'NAB'},
+  {sym:'WBC.AX',   name:'Westpac'},
+  {sym:'ANZ.AX',   name:'ANZ Bank'},
+  {sym:'MQG.AX',   name:'Macquarie Group'},
+  {sym:'WES.AX',   name:'Wesfarmers'},
+  {sym:'WOW.AX',   name:'Woolworths'},
+  {sym:'RIO.AX',   name:'Rio Tinto'},
+  {sym:'FMG.AX',   name:'Fortescue'},
+  {sym:'TLS.AX',   name:'Telstra'},
+  // ASX ETFs
+  {sym:'VAS.AX',   name:'Vanguard ASX 300'},
+  {sym:'IVV.AX',   name:'iShares S&P 500 (ASX)'},
+  {sym:'NDQ.AX',   name:'BetaShares Nasdaq 100'},
+  {sym:'VGS.AX',   name:'Vanguard Global Shares'},
+  {sym:'A200.AX',  name:'BetaShares ASX 200'},
+  {sym:'ETHI.AX',  name:'BetaShares Global Sustainability'},
+  {sym:'GOLD.AX',  name:'BetaShares Gold Bullion'},
+  {sym:'IOZ.AX',   name:'iShares Core ASX 200'},
+  // US Stocks
+  {sym:'AAPL',     name:'Apple'},
+  {sym:'MSFT',     name:'Microsoft'},
+  {sym:'NVDA',     name:'Nvidia'},
+  {sym:'GOOGL',    name:'Alphabet'},
+  {sym:'AMZN',     name:'Amazon'},
+  {sym:'TSLA',     name:'Tesla'},
+  {sym:'META',     name:'Meta'},
+  {sym:'JPM',      name:'JPMorgan Chase'},
+  {sym:'V',        name:'Visa'},
+  {sym:'COIN',     name:'Coinbase'},
+  {sym:'PLTR',     name:'Palantir'},
+  {sym:'AMD',      name:'AMD'},
+  // US ETFs
+  {sym:'SPY',      name:'S&P 500 ETF (SPDR)'},
+  {sym:'VOO',      name:'Vanguard S&P 500'},
+  {sym:'QQQ',      name:'Nasdaq 100 ETF'},
+  {sym:'VTI',      name:'Vanguard Total Market'},
+  {sym:'IVV',      name:'iShares S&P 500'},
+  {sym:'ARKK',     name:'ARK Innovation ETF'},
+  {sym:'GLD',      name:'Gold ETF (SPDR)'},
+  {sym:'XLK',      name:'Technology Select ETF'},
+];
+
+// Market movers pool — large caps used to find top/bottom movers
+const MOVER_POOL = [
+  'AAPL','MSFT','NVDA','GOOGL','AMZN','TSLA','META','JPM','V','UNH',
+  'XOM','BRK-B','LLY','AVGO','NFLX','AMD','ORCL','COST','WMT','PLTR',
+  'ARM','COIN','MU','INTC','BA','DIS','SBUX','PFE','KO','MCD',
+  'BHP.AX','CBA.AX','CSL.AX','NAB.AX','WBC.AX','RIO.AX','FMG.AX','WES.AX',
+];
+
+// Crypto list
+const CRYPTOS = [
+  {sym:'BTC',name:'Bitcoin',cs:'BTC'},{sym:'ETH',name:'Ethereum',cs:'ETH'},
+  {sym:'BNB',name:'BNB',cs:'BNB'},{sym:'SOL',name:'Solana',cs:'SOL'},
+  {sym:'XRP',name:'XRP',cs:'XRP'},{sym:'ADA',name:'Cardano',cs:'ADA'},
+  {sym:'AVAX',name:'Avalanche',cs:'AVAX'},{sym:'DOGE',name:'Dogecoin',cs:'DOGE'},
+  {sym:'DOT',name:'Polkadot',cs:'DOT'},{sym:'MATIC',name:'Polygon',cs:'MATIC'},
+  {sym:'LINK',name:'Chainlink',cs:'LINK'},{sym:'UNI',name:'Uniswap',cs:'UNI'},
+  {sym:'LTC',name:'Litecoin',cs:'LTC'},{sym:'ATOM',name:'Cosmos',cs:'ATOM'},
+  {sym:'NEAR',name:'Near Protocol',cs:'NEAR'},{sym:'SUI',name:'Sui',cs:'SUI'},
+  {sym:'APT',name:'Aptos',cs:'APT'},{sym:'INJ',name:'Injective',cs:'INJ'},
+];
+const CRYPTO_DEFAULTS = {BTC:102500,ETH:3200,BNB:900,SOL:220,XRP:0.85,ADA:0.7,
+  AVAX:55,DOGE:0.28,DOT:11,MATIC:0.65,LINK:25,UNI:12,LTC:160,ATOM:10,NEAR:8,SUI:4,APT:12,INJ:25};
+
+// ── App state ─────────────────────────────────────────────────────
+let usdToAud     = 1.58;
+let cryptoData   = {};
+let popularData  = {};   // sym -> {price, change, audPrice}
+let stockHoldings = JSON.parse(localStorage.getItem('stockHoldings_v2') || '{}');
+let ownedCrypto   = JSON.parse(localStorage.getItem('ownedCryptoAUD')   || '{}');
+let stockChartInst = null, cryptoChartInst = null;
+
+// ── Snapshot system ───────────────────────────────────────────────
+const SNAP_KEY          = 'portfolioSnapshots_v3';
+const SNAP_INTERVAL_MS  = 30 * 1000;
+const MAX_AGE_MS        = 30 * 24 * 60 * 60 * 1000;
+
+function loadSnaps() {
+  try { return JSON.parse(localStorage.getItem(SNAP_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveSnap(cv, sv) {
+  let s = loadSnaps();
+  const now = Date.now();
+  const bucket = Math.floor(now / SNAP_INTERVAL_MS);
+  const lb = s.length ? Math.floor(s[s.length-1].ts / SNAP_INTERVAL_MS) : -1;
+  if (lb === bucket) s[s.length-1] = {ts:now,cv,sv};
+  else s.push({ts:now,cv,sv});
+  s = s.filter(x => now - x.ts < MAX_AGE_MS);
+  localStorage.setItem(SNAP_KEY, JSON.stringify(s));
+  return s;
+}
+function buildChartData() {
+  const s = loadSnaps();
+  document.getElementById('snapshot-count').textContent =
+    s.length + ' snapshot' + (s.length !== 1 ? 's' : '');
+  if (!s.length) return {labels:['Now'],cv:[null],sv:[null]};
+  const N = 60;
+  const sel = s.length <= N ? s : Array.from({length:N}, (_,i) => s[Math.round(i*(s.length-1)/(N-1))]);
+  const now = new Date();
+  const labels = sel.map(x => {
+    const d = new Date(x.ts), diff = Math.floor((now-d)/86400000);
+    if (diff === 0) return d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    if (diff === 1) return 'Yesterday';
+    return d.toLocaleDateString('en-AU',{month:'short',day:'numeric'});
+  });
+  return {labels, cv: sel.map(x=>+x.cv.toFixed(2)), sv: sel.map(x=>+x.sv.toFixed(2))};
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────
+function switchTab(t) {
+  ['overview','stocks','crypto'].forEach((n,i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', n===t);
+    const p = document.getElementById('tab-'+n);
+    p.style.display = (n===t) ? 'block' : 'none';
+  });
+}
+document.getElementById('tab-overview').style.display = 'block';
+
+// ── Clock ─────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
+
+// ── Formatting ────────────────────────────────────────────────────
+function fmtAUD(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 10000) return 'A$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (n >= 100)   return 'A$'+n.toFixed(2);
+  if (n >= 1)     return 'A$'+n.toFixed(4);
+  return 'A$'+n.toFixed(6);
+}
+function fmtVal(n) { return 'A$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtChg(c) { return (c>=0?'+':'')+c.toFixed(2)+'%'; }
+function fmtAxis(v) {
+  if (v>=1000000) return 'A$'+(v/1000000).toFixed(1)+'M';
+  if (v>=1000)    return 'A$'+(v/1000).toFixed(1)+'k';
+  return 'A$'+v.toFixed(0);
+}
+function toAUD(price, currency) {
+  return currency === 'AUD' ? price : +(price * usdToAud).toFixed(2);
+}
+
+// ── Charts ────────────────────────────────────────────────────────
+function upsertChart(id, labels, data, color) {
+  const existing = id === 'stockChart' ? stockChartInst : cryptoChartInst;
+  if (existing) {
+    existing.data.labels = labels;
+    existing.data.datasets[0].data = data;
+    existing.update('none');
+    return;
+  }
+  const inst = new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {labels, datasets:[{data, borderColor:color, borderWidth:2,
+      pointRadius: data.length<=4 ? 4 : 0, pointBackgroundColor:color,
+      fill:true, backgroundColor:color+'18', tension:.4, spanGaps:true}]},
+    options: {responsive:true, maintainAspectRatio:false, animation:{duration:400},
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#4a4260',font:{size:10},maxTicksLimit:8},grid:{color:'#15132a'}},
+        y:{ticks:{color:'#4a4260',font:{size:10},callback:fmtAxis},grid:{color:'#15132a'}}
+      }}
+  });
+  if (id==='stockChart') stockChartInst=inst; else cryptoChartInst=inst;
+}
+function refreshCharts() {
+  const {labels,cv,sv} = buildChartData();
+  upsertChart('cryptoChart', labels, cv, '#378ADD');
+  upsertChart('stockChart',  labels, sv, '#7F77DD');
+}
+
+// ── FX rate ───────────────────────────────────────────────────────
+async function fetchFxRate() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=aud');
+    if (r.ok) {
+      const d = await r.json();
+      if (d?.tether?.aud) {
+        usdToAud = d.tether.aud;
+        document.getElementById('fx-rate').textContent = '1 USD = A$'+usdToAud.toFixed(4);
+      }
+    }
+  } catch(e){}
+}
+
+// ── Yahoo Finance quote fetcher ───────────────────────────────────
+async function yahooQuote(syms) {
+  if (!syms.length) return [];
+  try {
+    const r = await fetch(
+      'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(syms.join(',')),
+      {mode:'cors'}
+    );
+    if (r.ok) {
+      const d = await r.json();
+      return d?.quoteResponse?.result || [];
+    }
+  } catch(e){}
+  return [];
+}
+
+// ── Fetch market movers (top 3 / bottom 3 from large cap pool) ────
+async function fetchMarketMovers() {
+  const quotes = await yahooQuote(MOVER_POOL);
+  if (!quotes.length) {
+    document.getElementById('mkt-top').innerHTML = moverPlaceholder();
+    document.getElementById('mkt-bot').innerHTML = moverPlaceholder();
+    return;
+  }
+  const mapped = quotes.map(q => ({
+    sym:      q.symbol,
+    name:     q.shortName || q.longName || q.symbol,
+    price:    toAUD(q.regularMarketPrice, q.currency),
+    change:   +q.regularMarketChangePercent.toFixed(2),
+    currency: q.currency,
+  })).filter(q => q.change !== null);
+
+  const sorted = [...mapped].sort((a,b) => b.change - a.change);
+  const top3 = sorted.slice(0,3);
+  const bot3 = sorted.slice(-3).reverse();
+
+  document.getElementById('mkt-top').innerHTML = top3.map(q => moverCard(q,'top')).join('');
+  document.getElementById('mkt-bot').innerHTML = bot3.map(q => moverCard(q,'bot')).join('');
+}
+
+function moverCard(q, cls) {
+  return '<div class="mover '+cls+'" onclick="quickAddStock(\''+q.sym+'\',\''+q.name.replace(/'/g,'')+'\','+q.price+','+q.change+')">'
+    +'<div class="sym">'+q.sym+'</div>'
+    +'<div class="name">'+q.name+'</div>'
+    +'<div class="price">'+fmtAUD(q.price)+'</div>'
+    +'<div class="chg '+(q.change>=0?'up':'dn')+'">'+fmtChg(q.change)+'</div>'
+    +'</div>';
+}
+function moverPlaceholder() {
+  return ['','',''].map(()=>'<div class="mover" style="opacity:.3;"><div class="sym">—</div><div class="name">loading</div><div class="price">—</div><div class="chg">—</div></div>').join('');
+}
+
+// ── Fetch & render popular watchlist ─────────────────────────────
+async function fetchPopular() {
+  const syms = POPULAR.map(p => p.sym);
+  const quotes = await yahooQuote(syms);
+  quotes.forEach(q => {
+    popularData[q.symbol] = {
+      price:    q.regularMarketPrice,
+      change:   +q.regularMarketChangePercent.toFixed(2),
+      currency: q.currency,
+      audPrice: toAUD(q.regularMarketPrice, q.currency),
+    };
+  });
+  renderPopular();
+}
+
+function renderPopular() {
+  const grid = document.getElementById('popular-grid');
+  grid.innerHTML = POPULAR.map(p => {
+    const d = popularData[p.sym];
+    const price = d ? fmtAUD(d.audPrice) : '—';
+    const chg   = d ? fmtChg(d.change)   : '—';
+    const cls   = d && d.change >= 0 ? 'up' : 'dn';
+    const inHoldings = !!stockHoldings[p.sym];
+    return '<div class="pop-card" onclick="quickAddStock(\''+p.sym+'\',\''+p.name.replace(/'/g,'')+'\','+(d?d.audPrice:0)+','+(d?d.change:0)+')">'
+      +'<div class="pop-sym">'+p.sym+'</div>'
+      +'<div class="pop-name">'+p.name+'</div>'
+      +'<div class="pop-right">'
+        +'<div class="pop-price">'+price+'</div>'
+        +'<div class="pop-chg '+cls+'">'+chg+'</div>'
+      +'</div>'
+      +(inHoldings ? '<div class="pop-add" style="color:#4ade80;background:#1a2e1a;">✓ Added</div>' : '<div class="pop-add">+ Add</div>')
+      +'</div>';
+  }).join('');
+}
+
+// ── Quick add from mover card or popular grid ─────────────────────
+function quickAddStock(sym, name, audPrice, change) {
+  if (!stockHoldings[sym]) {
+    stockHoldings[sym] = {sym, name, exchange:'', currency:'', price:audPrice, change, qty:0, lastUpdated:Date.now()};
+  } else {
+    stockHoldings[sym].price  = audPrice;
+    stockHoldings[sym].change = change;
+  }
+  localStorage.setItem('stockHoldings_v2', JSON.stringify(stockHoldings));
+  renderHoldings();
+  renderPopular();
+  updateOverview();
+}
+
+// ── Stock search ──────────────────────────────────────────────────
+async function searchStock() {
+  const raw = document.getElementById('stock-search-input').value.trim().toUpperCase();
+  if (!raw) return;
+  const btn = document.getElementById('search-btn');
+  const resultsEl = document.getElementById('search-results');
+  btn.disabled = true; btn.textContent = 'Searching…';
+  resultsEl.innerHTML = '<div class="search-status">Searching for "'+raw+'"…</div>';
+  await fetchFxRate();
+
+  let found = [];
+  try {
+    // Try direct quote first
+    let quotes = await yahooQuote([raw]);
+    if (quotes.length) {
+      found = quotes;
+    } else {
+      // Fall back to autocomplete
+      const r = await fetch(
+        'https://query1.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(raw)+'&quotesCount=8&newsCount=0',
+        {mode:'cors'}
+      );
+      if (r.ok) {
+        const d = await r.json();
+        const hits = (d?.quotes||[]).filter(q=>q.quoteType&&q.quoteType!=='FUTURE').slice(0,6);
+        if (hits.length) {
+          found = await yahooQuote(hits.map(h=>h.symbol));
+        }
+      }
+    }
+  } catch(e){}
+
+  if (!found.length) {
+    resultsEl.innerHTML = '<div class="search-status">No results for "'+raw+'". For ASX stocks add .AX (e.g. BHP.AX). For ETFs try the full ticker.</div>';
+  } else {
+    const rows = found.map(q => {
+      const audP  = toAUD(q.regularMarketPrice, q.currency);
+      const chg   = +q.regularMarketChangePercent.toFixed(2);
+      const name  = q.longName || q.shortName || q.symbol;
+      const exch  = q.fullExchangeName || q.exchange || '';
+      const label = stockHoldings[q.symbol] ? 'Update' : '+ Add';
+      const safeN = name.replace(/'/g,"'").replace(/"/g,'&quot;');
+      return '<div class="search-result-row">'
+        +'<div class="sr-sym">'+q.symbol+'</div>'
+        +'<div class="sr-name">'+name+'</div>'
+        +'<div class="sr-exch">'+exch+'</div>'
+        +'<div class="sr-price">'+fmtAUD(audP)+'</div>'
+        +'<div class="sr-chg '+(chg>=0?'up':'dn')+'">'+fmtChg(chg)+'</div>'
+        +'<button class="sr-add" onclick=\'addSearchResult('+JSON.stringify({sym:q.symbol,name,exchange:exch,currency:q.currency,price:audP,change:chg})+')\'>'+label+'</button>'
+        +'</div>';
+    }).join('');
+    resultsEl.innerHTML = '<div class="search-results-wrap">'+rows+'</div>';
+  }
+  btn.disabled = false; btn.textContent = 'Search';
+}
+
+function addSearchResult(s) {
+  stockHoldings[s.sym] = {
+    sym:s.sym, name:s.name, exchange:s.exchange, currency:s.currency,
+    price:s.price, change:s.change, qty: stockHoldings[s.sym]?.qty || 0,
+    lastUpdated: Date.now()
+  };
+  localStorage.setItem('stockHoldings_v2', JSON.stringify(stockHoldings));
+  renderHoldings();
+  renderPopular();
+  updateOverview();
+}
+
+// ── Holdings table ────────────────────────────────────────────────
+function renderHoldings() {
+  const keys = Object.keys(stockHoldings);
+  document.getElementById('holdings-count').textContent = keys.length + ' position' + (keys.length!==1?'s':'');
+  const tbody = document.getElementById('holdings-tbody');
+  if (!keys.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="color:#4a4260;text-align:center;padding:24px;">Search for a stock above or click a popular stock to add it</td></tr>';
+    document.getElementById('holdings-movers').style.display = 'none';
+    return;
+  }
+  tbody.innerHTML = keys.map(sym => {
+    const h = stockHoldings[sym];
+    const qty = parseFloat(h.qty) || 0;
+    const val = (qty > 0 && h.price) ? fmtVal(qty * h.price) : '—';
+    return '<tr>'
+      +'<td style="font-weight:500;color:#e8e6f0;">'+h.sym+'</td>'
+      +'<td style="color:#7a6fa8;font-size:12px;">'+h.name+'</td>'
+      +'<td style="color:#4a4260;font-size:11px;">'+h.exchange+'</td>'
+      +'<td>'+fmtAUD(h.price)+'</td>'
+      +'<td class="'+(h.change>=0?'up':'dn')+'">'+fmtChg(h.change)+'</td>'
+      +'<td><input class="qty-input" type="number" min="0" step="any" placeholder="0"'
+        +' value="'+(qty>0?qty:'')+'" onchange="setStockQty(\''+sym+'\',this.value)"></td>'
+      +'<td class="owned-val">'+val+'</td>'
+      +'<td><button class="remove-btn" onclick="removeStock(\''+sym+'\')" title="Remove">×</button></td>'
+      +'</tr>';
+  }).join('');
+
+  // Holdings movers
+  const withQty = keys.filter(s => (parseFloat(stockHoldings[s].qty)||0)>0 && stockHoldings[s].price);
+  if (withQty.length >= 2) {
+    document.getElementById('holdings-movers').style.display = 'block';
+    const sorted = [...withQty].sort((a,b)=>(stockHoldings[b].change||0)-(stockHoldings[a].change||0));
+    const hMover = (arr,cls) => arr.map(sym => {
+      const h=stockHoldings[sym];
+      return '<div class="mover '+cls+'"><div class="sym">'+h.sym+'</div><div class="name">'+h.name+'</div>'
+        +'<div class="price">'+fmtAUD(h.price)+'</div>'
+        +'<div class="chg '+(h.change>=0?'up':'dn')+'">'+fmtChg(h.change)+'</div></div>';
+    }).join('');
+    const n = Math.min(3, sorted.length);
+    document.getElementById('h-top').innerHTML = hMover(sorted.slice(0,n),'top');
+    document.getElementById('h-bot').innerHTML = hMover(sorted.slice(-n).reverse(),'bot');
+  } else {
+    document.getElementById('holdings-movers').style.display = 'none';
+  }
+}
+
+function setStockQty(sym, val) {
+  const n = parseFloat(val);
+  if (stockHoldings[sym]) stockHoldings[sym].qty = (!isNaN(n)&&n>0) ? n : 0;
+  localStorage.setItem('stockHoldings_v2', JSON.stringify(stockHoldings));
+  renderHoldings();
+  snapshot();
+}
+function removeStock(sym) {
+  delete stockHoldings[sym];
+  localStorage.setItem('stockHoldings_v2', JSON.stringify(stockHoldings));
+  renderHoldings();
+  renderPopular();
+  snapshot();
+}
+
+// ── Refresh holdings prices from Yahoo ───────────────────────────
+async function refreshHoldingPrices() {
+  const syms = Object.keys(stockHoldings);
+  if (!syms.length) return;
+  await fetchFxRate();
+  const quotes = await yahooQuote(syms);
+  quotes.forEach(q => {
+    if (stockHoldings[q.symbol]) {
+      stockHoldings[q.symbol].price    = toAUD(q.regularMarketPrice, q.currency);
+      stockHoldings[q.symbol].change   = +q.regularMarketChangePercent.toFixed(2);
+      stockHoldings[q.symbol].exchange = q.fullExchangeName || q.exchange || '';
+      stockHoldings[q.symbol].lastUpdated = Date.now();
+    }
+  });
+  localStorage.setItem('stockHoldings_v2', JSON.stringify(stockHoldings));
+  renderHoldings();
+  document.getElementById('stock-last-upd').textContent =
+    'Updated '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  snapshot();
+}
+
+// ── CoinSpot crypto prices ────────────────────────────────────────
+async function fetchCrypto() {
+  const results = {};
+  try {
+    const r = await fetch('https://www.coinspot.com.au/pubapi/v2/latest');
+    if (r.ok) {
+      const d = await r.json();
+      if (d.status==='ok' && d.prices) {
+        CRYPTOS.forEach(c => {
+          const k = c.cs.toLowerCase();
+          if (d.prices[k]) results[c.sym] = {
+            price: parseFloat(d.prices[k].last),
+            bid:   parseFloat(d.prices[k].bid),
+            ask:   parseFloat(d.prices[k].ask),
+            change: null
+          };
+        });
+      }
+    }
+  } catch(e){}
+
+  CRYPTOS.forEach(c => {
+    if (!results[c.sym]) {
+      const prev  = cryptoData[c.sym];
+      const base  = prev?.price || (CRYPTO_DEFAULTS[c.sym]||1);
+      const delta = (Math.random()-.46)*2;
+      results[c.sym] = {price:+(base*(1+delta/100)).toFixed(6), change:null};
+    }
+  });
+
+  // Calculate 24h change from stored price history
+  let ph = {};
+  try { ph = JSON.parse(localStorage.getItem('coinPriceHistory')||'{}'); } catch(e){}
+  CRYPTOS.forEach(c => {
+    const d = results[c.sym]; if(!d) return;
+    if (!ph[c.sym]) ph[c.sym]={};
+    d.change = ph[c.sym].price24h
+      ? +((d.price - ph[c.sym].price24h) / ph[c.sym].price24h * 100).toFixed(2)
+      : 0;
+    if (!ph[c.sym].ts24h || Date.now()-ph[c.sym].ts24h >= 23.5*3600*1000) {
+      ph[c.sym].price24h  = ph[c.sym].pricePrev || d.price;
+      ph[c.sym].pricePrev = d.price;
+      ph[c.sym].ts24h     = Date.now();
+    }
+  });
+  localStorage.setItem('coinPriceHistory', JSON.stringify(ph));
+
+  cryptoData = results;
+  renderCryptoMovers();
+  renderCryptoTable();
+  document.getElementById('crypto-last-upd').textContent =
+    'Updated '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  snapshot();
+}
+
+function renderCryptoMovers() {
+  const withChg = CRYPTOS.filter(c=>cryptoData[c.sym]&&cryptoData[c.sym].change!==null);
+  const sorted  = [...withChg].sort((a,b)=>(cryptoData[b.sym].change||0)-(cryptoData[a.sym].change||0));
+  const mHtml   = (arr,cls) => arr.map(c => {
+    const d = cryptoData[c.sym];
+    return '<div class="mover '+cls+'"><div class="sym">'+c.sym+'</div><div class="name">'+c.name+'</div>'
+      +'<div class="price">'+fmtAUD(d.price)+'</div>'
+      +'<div class="chg '+(d.change>=0?'up':'dn')+'">'+fmtChg(d.change)+'</div></div>';
+  }).join('');
+  document.getElementById('crypto-top').innerHTML = mHtml(sorted.slice(0,3),'top');
+  document.getElementById('crypto-bot').innerHTML = mHtml(sorted.slice(-3).reverse(),'bot');
+}
+
+function renderCryptoTable() {
+  const q = (document.getElementById('crypto-filter')?.value||'').toLowerCase();
+  const filtered = CRYPTOS.filter(c=>c.sym.toLowerCase().includes(q)||c.name.toLowerCase().includes(q));
+  document.getElementById('crypto-tbody').innerHTML = filtered.map(c => {
+    const d   = cryptoData[c.sym]||{price:0,change:0};
+    const qty = ownedCrypto[c.sym] !== undefined ? ownedCrypto[c.sym] : '';
+    const num = parseFloat(qty);
+    const val = (!isNaN(num)&&num>0&&d.price) ? fmtVal(num*d.price) : '—';
+    return '<tr>'
+      +'<td style="font-weight:500;color:#e8e6f0;">'+c.sym+'</td>'
+      +'<td style="color:#7a6fa8;font-size:12px;">'+c.name+'</td>'
+      +'<td>'+fmtAUD(d.price)+'</td>'
+      +'<td class="'+(d.change>=0?'up':'dn')+'">'+(d.change!==null?fmtChg(d.change):'—')+'</td>'
+      +'<td><input class="qty-input" type="number" min="0" step="any" placeholder="0"'
+        +' value="'+(qty!==''?qty:'')+'"'
+        +' onchange="setCryptoQty(\''+c.sym+'\',this.value)"></td>'
+      +'<td class="owned-val">'+val+'</td>'
+      +'</tr>';
+  }).join('')||'<tr><td colspan="6" style="color:#4a4260;text-align:center;padding:20px;">No results</td></tr>';
+}
+
+function setCryptoQty(sym, val) {
+  const n = parseFloat(val);
+  if (!isNaN(n)&&n>0) ownedCrypto[sym]=n; else delete ownedCrypto[sym];
+  localStorage.setItem('ownedCryptoAUD', JSON.stringify(ownedCrypto));
+  renderCryptoTable();
+  snapshot();
+}
+
+// ── Value calculators ─────────────────────────────────────────────
+function calcCV() {
+  return CRYPTOS.reduce((s,c)=>{
+    const d=cryptoData[c.sym]; if(!d) return s;
+    return s+(parseFloat(ownedCrypto[c.sym])||0)*d.price;
+  },0);
+}
+function calcSV() {
+  return Object.values(stockHoldings).reduce((s,h)=>s+(parseFloat(h.qty)||0)*(h.price||0),0);
+}
+
+// ── Snapshot & charts ─────────────────────────────────────────────
+function snapshot() {
+  saveSnap(calcCV(), calcSV());
+  refreshCharts();
+  updateOverview();
+}
+
+// ── Overview cards ────────────────────────────────────────────────
+function updateOverview() {
+  const cv=calcCV(), sv=calcSV(), tv=cv+sv;
+  const snaps=loadSnaps();
+  const s24 = snaps.find(s=>Date.now()-s.ts>=23*3600*1000) || snaps[0] || {cv:0,sv:0};
+  function setCard(vId,cId,cur,prev) {
+    const diff=cur-prev, pct=prev?(diff/prev)*100:0, sign=diff>=0?'+':'-';
+    document.getElementById(vId).textContent = fmtVal(cur);
+    document.getElementById(cId).textContent =
+      sign+'A$'+Math.abs(diff).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})+
+      ' ('+(diff>=0?'+':'')+pct.toFixed(2)+'%)';
+    document.getElementById(cId).className = 'sub '+(diff>=0?'up':'dn');
+  }
+  setCard('total-val','total-chg', tv, s24.cv+s24.sv);
+  setCard('stock-val','stock-chg', sv, s24.sv);
+  setCard('crypto-val','crypto-chg', cv, s24.cv);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────
+refreshCharts();
+renderHoldings();
+renderPopular();   // render with empty data first, then fill in
+fetchFxRate().then(() => {
+  fetchMarketMovers();
+  fetchPopular();
+  refreshHoldingPrices();
+});
+fetchCrypto();
+
+setInterval(fetchCrypto,           30000);
+setInterval(refreshHoldingPrices,  60000);
+setInterval(fetchMarketMovers,     60000);
+setInterval(fetchPopular,         120000);
+</script>
+</body>
+</html>

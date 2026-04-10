@@ -200,11 +200,22 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
       <span class="badge badge-purple" id="fx-rate">USD/AUD: loading…</span>
       <span class="ttl" id="stock-last-upd">connecting...</span>
     </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <div id="us-market-status" style="font-size:11px;padding:4px 10px;border-radius:6px;background:#1a2e1a;color:#4ade80;">
+        US Market: checking...
+      </div>
+      <div style="font-size:11px;padding:4px 10px;border-radius:6px;background:#1e1a30;color:#a78bfa;">
+        ASX: end-of-day prices (updates after 4pm AEST)
+      </div>
+      <div style="font-size:11px;padding:4px 10px;border-radius:6px;background:#1a2e1a;color:#4ade80;">
+        Crypto: live every 30s via CoinSpot
+      </div>
+    </div>
 
     <!-- Market movers from Yahoo Finance -->
-    <div class="movers-label">Top 3 market gainers (live)</div>
+    <div class="movers-label" id="movers-label">Top 3 market gainers (live)</div>
     <div class="movers-grid" id="mkt-top"></div>
-    <div class="movers-label">Top 3 market losers (live)</div>
+    <div class="movers-label" id="losers-label">Top 3 market losers (live)</div>
     <div class="movers-grid" id="mkt-bot"></div>
 
     <div class="divider"></div>
@@ -227,6 +238,7 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
     <!-- My holdings -->
     <div class="section-hdr">
       <h3>My holdings</h3>
+      <span style="font-size:10px;color:#4a4260;margin-left:4px;">US stocks live · ASX end-of-day</span>
       <span class="ttl" id="holdings-count">0 positions</span>
     </div>
     <div class="mkt-wrap"><div class="mkt-scroll">
@@ -260,7 +272,7 @@ h1{font-size:20px;font-weight:500;color:#c4baff;margin-bottom:16px;display:flex;
     <!-- Popular watchlist -->
     <div class="section-hdr">
       <h3>Popular stocks &amp; ETFs</h3>
-      <span style="font-size:10px;color:#4a4260;">Click any card to add to your holdings</span>
+      <span style="font-size:10px;color:#4a4260;">Click any card to add · US = live · ASX = end of day</span>
     </div>
     <div class="popular-grid" id="popular-grid"></div>
 
@@ -497,6 +509,38 @@ async function fetchFxRate() {
 // ── FMP quote fetcher ────────────────────────────────────────────
 const FMP_KEY = 'KRJdGjZ3Lh3Q5G3t58jZPSxNvyDdL1BE';
 
+function updateMarketStatus() {
+  const el = document.getElementById('us-market-status');
+  if (!el) return;
+  const now = new Date();
+  const utcH = now.getUTCHours();
+  const utcM = now.getUTCMinutes();
+  const utcMins = utcH * 60 + utcM;
+  const day = now.getUTCDay(); // 0=Sun, 6=Sat
+  const isWeekend = day === 0 || day === 6;
+  // NYSE: 14:30-21:00 UTC (Mon-Fri)
+  const marketOpen   = 14 * 60 + 30;
+  const marketClose  = 21 * 60;
+  const isOpen = !isWeekend && utcMins >= marketOpen && utcMins < marketClose;
+  const preMarket  = !isWeekend && utcMins >= 9*60 && utcMins < marketOpen;
+  const afterHours = !isWeekend && utcMins >= marketClose && utcMins < 24*60;
+
+  if (isOpen) {
+    el.style.background = '#1a2e1a'; el.style.color = '#4ade80';
+    el.textContent = 'US Market: OPEN — live prices';
+  } else if (preMarket) {
+    el.style.background = '#1e1a30'; el.style.color = '#a78bfa';
+    el.textContent = 'US Market: Pre-market — prices updating';
+  } else if (afterHours) {
+    el.style.background = '#2a1e1a'; el.style.color = '#fb923c';
+    el.textContent = 'US Market: After hours — showing last close';
+  } else {
+    el.style.background = '#1a1a2a'; el.style.color = '#7a6fa8';
+    el.textContent = isWeekend ? 'US Market: Closed (weekend) — showing last close' : 'US Market: Closed — showing last close';
+  }
+}
+setInterval(updateMarketStatus, 60000);
+
 async function fmpQuote(syms) {
   if (!syms.length) return [];
   const results = [];
@@ -533,9 +577,10 @@ async function yahooQuote(syms) {
   return raw.map(fmpToInternal);
 }
 
-// ── Fetch market movers — real top/bottom 3 from FMP ─────────────
+// ── Fetch market movers — live or EOD fallback ───────────────────
 async function fetchMarketMovers() {
   try {
+    // Try live gainers/losers first
     const [gainRes, loseRes] = await Promise.all([
       fetch('https://financialmodelingprep.com/stable/market-biggest-gainers?apikey='+FMP_KEY),
       fetch('https://financialmodelingprep.com/stable/market-biggest-losers?apikey='+FMP_KEY),
@@ -543,36 +588,52 @@ async function fetchMarketMovers() {
     if (gainRes.ok && loseRes.ok) {
       const gainers = await gainRes.json();
       const losers  = await loseRes.json();
-      // Handle both array response and {gainers:[]} object response
-      const gArr = Array.isArray(gainers) ? gainers : (gainers.gainers || gainers.mostGainerStock || []);
-      const lArr = Array.isArray(losers)  ? losers  : (losers.losers  || losers.mostLoserStock  || []);
-      const mapMover = q => ({
-        sym:    q.symbol || q.ticker,
-        name:   q.name || q.companyName || q.symbol,
-        price:  toAUD(parseFloat(q.price||q.currentPrice||0), 'USD'),
-        change: +(parseFloat(q.changesPercentage||q.changePercent||q.change||0)).toFixed(2),
-      });
-      const top3 = gArr.slice(0,3).map(mapMover);
-      const bot3 = lArr.slice(0,3).map(mapMover);
-      document.getElementById('mkt-top').innerHTML = top3.length ? top3.map(q=>moverCard(q,'top')).join('') : moverPlaceholder();
-      document.getElementById('mkt-bot').innerHTML = bot3.length ? bot3.map(q=>moverCard(q,'bot')).join('') : moverPlaceholder();
+      const gArr = Array.isArray(gainers) ? gainers : (gainers.gainers || []);
+      const lArr = Array.isArray(losers)  ? losers  : (losers.losers  || []);
+
+      if (gArr.length > 0 && lArr.length > 0) {
+        // Market is open — use live data
+        renderMovers(gArr, lArr);
+        document.getElementById('movers-label').textContent = 'Top 3 market gainers (live)';
+        document.getElementById('losers-label').textContent = 'Top 3 market losers (live)';
+        return;
+      }
+    }
+  } catch(e){}
+
+  // Market closed — fall back to EOD data from large cap pool
+  try {
+    const pool = ['AAPL','MSFT','NVDA','GOOGL','AMZN','TSLA','META','JPM','V',
+                  'UNH','XOM','AMD','NFLX','COIN','PLTR','ARM','DIS','BRK-B'];
+    const quotes = await fmpQuote(pool);
+    if (quotes.length > 0) {
+      const sorted = [...quotes]
+        .filter(q => q.changesPercentage != null)
+        .sort((a,b) => (b.changesPercentage||0) - (a.changesPercentage||0));
+      const gArr = sorted.slice(0,3).map(q=>({...q, name: q.name||q.symbol}));
+      const lArr = sorted.slice(-3).reverse().map(q=>({...q, name: q.name||q.symbol}));
+      renderMovers(gArr, lArr);
+      document.getElementById('movers-label').textContent = 'Top 3 gainers — last close';
+      document.getElementById('losers-label').textContent = 'Top 3 losers — last close';
       return;
     }
-  } catch(e){ console.error('Movers error:', e); }
+  } catch(e){ console.error('EOD movers error:', e); }
+
   document.getElementById('mkt-top').innerHTML = moverPlaceholder();
   document.getElementById('mkt-bot').innerHTML = moverPlaceholder();
 }
 
-function moverCard(q, cls) {
-  return '<div class="mover '+cls+'" onclick="quickAddStock(\''+q.sym+'\',\''+q.name.replace(/'/g,'')+'\','+q.price+','+q.change+')">'
-    +'<div class="sym">'+q.sym+'</div>'
-    +'<div class="name">'+q.name+'</div>'
-    +'<div class="price">'+fmtAUD(q.price)+'</div>'
-    +'<div class="chg '+(q.change>=0?'up':'dn')+'">'+fmtChg(q.change)+'</div>'
-    +'</div>';
-}
-function moverPlaceholder() {
-  return ['','',''].map(()=>'<div class="mover" style="opacity:.3;"><div class="sym">—</div><div class="name">loading</div><div class="price">—</div><div class="chg">—</div></div>').join('');
+function renderMovers(gArr, lArr) {
+  const mapMover = q => ({
+    sym:    q.symbol || q.ticker,
+    name:   q.name || q.companyName || q.symbol,
+    price:  toAUD(parseFloat(q.price||q.currentPrice||0), 'USD'),
+    change: +(parseFloat(q.changesPercentage||q.changePercent||q.change||0)).toFixed(2),
+  });
+  const top3 = gArr.slice(0,3).map(mapMover);
+  const bot3 = lArr.slice(0,3).map(mapMover);
+  document.getElementById('mkt-top').innerHTML = top3.length ? top3.map(q=>moverCard(q,'top')).join('') : moverPlaceholder();
+  document.getElementById('mkt-bot').innerHTML = bot3.length ? bot3.map(q=>moverCard(q,'bot')).join('') : moverPlaceholder();
 }
 
 // ── Fetch & render popular watchlist ─────────────────────────────
@@ -912,6 +973,7 @@ function updateOverview() {
 // ── Boot ──────────────────────────────────────────────────────────
 refreshCharts();
 renderHoldings();
+updateMarketStatus();
 renderPopular();   // render with empty data first, then fill in
 fetchFxRate().then(() => {
   fetchMarketMovers();

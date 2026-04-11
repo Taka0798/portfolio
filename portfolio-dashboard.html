@@ -555,7 +555,7 @@ async function yahooQuote(syms) {
             shortName:                 q.name || q.symbol,
             longName:                  q.name || q.symbol,
             regularMarketPrice:        q.price || 0,
-            regularMarketChangePercent: q.changesPercentage || 0,
+            regularMarketChangePercent: q.changePercentage || q.changesPercentage || 0,
             currency:                  q.currency || 'USD',
             fullExchangeName:          q.exchange || q.exchangeShortName || '',
             exchange:                  q.exchange || q.exchangeShortName || '',
@@ -588,7 +588,7 @@ async function fetchMarketMovers() {
           sym:    q.symbol,
           name:   q.name || q.symbol,
           price:  toAUD(parseFloat(q.price||0), 'USD'),
-          change: +(parseFloat(q.changesPercentage||0)).toFixed(2),
+          change: +(parseFloat(q.changePercentage||q.changesPercentage||0)).toFixed(2),
         });
         const top3 = gArr.slice(0,3).map(mapM);
         const bot3 = lArr.slice(0,3).map(mapM);

@@ -534,31 +534,35 @@ function updateMarketStatus() {
 }
 setInterval(updateMarketStatus, 60000);
 
-// Stock quotes via Yahoo Finance (works from GitHub Pages)
+// Stock quotes via FMP stable API
+const FMP_KEY = 'KRJdGjZ3Lh3Q5G3t58jZPSxNvyDdL1BE';
+
 async function yahooQuote(syms) {
   if (!syms.length) return [];
   const results = [];
   const chunks = [];
-  for (let i = 0; i < syms.length; i += 40) chunks.push(syms.slice(i, i+40));
+  for (let i = 0; i < syms.length; i += 50) chunks.push(syms.slice(i, i+50));
   for (const chunk of chunks) {
     try {
-      const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(chunk.join(','));
-      const r = await fetch(url, {mode:'cors'});
+      const url = 'https://financialmodelingprep.com/stable/quote?symbol='+encodeURIComponent(chunk.join(','))+'&apikey='+FMP_KEY;
+      const r = await fetch(url);
       if (r.ok) {
         const d = await r.json();
-        const res = d?.quoteResponse?.result || [];
-        if (res.length) { results.push(...res); continue; }
+        if (Array.isArray(d) && d.length) {
+          // Map FMP fields to Yahoo Finance field names so existing code works
+          results.push(...d.map(q => ({
+            symbol:                    q.symbol,
+            shortName:                 q.name || q.symbol,
+            longName:                  q.name || q.symbol,
+            regularMarketPrice:        q.price || 0,
+            regularMarketChangePercent: q.changesPercentage || 0,
+            currency:                  q.currency || 'USD',
+            fullExchangeName:          q.exchange || q.exchangeShortName || '',
+            exchange:                  q.exchange || q.exchangeShortName || '',
+          })));
+        }
       }
-    } catch(e){}
-    // Fallback: try query2
-    try {
-      const url2 = 'https://query2.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(chunk.join(','));
-      const r2 = await fetch(url2, {mode:'cors'});
-      if (r2.ok) {
-        const d2 = await r2.json();
-        results.push(...(d2?.quoteResponse?.result || []));
-      }
-    } catch(e){}
+    } catch(e) { console.error('FMP quote error:', e); }
   }
   return results;
 }
@@ -569,37 +573,56 @@ async function yahooQuote(syms) {
 // Fetches a large pool of stocks and sorts by % change to find top/bottom 3
 
 async function fetchMarketMovers() {
-  const MOVER_POOL = [
-    'AAPL','MSFT','NVDA','GOOGL','AMZN','TSLA','META','JPM','V','UNH',
-    'XOM','AMD','NFLX','COIN','PLTR','ARM','DIS','BRK-B','COST','WMT',
-    'LLY','AVGO','ORCL','MU','INTC','BA','SBUX','PFE','KO','MCD',
-    'BHP.AX','CBA.AX','CSL.AX','NAB.AX','WBC.AX','RIO.AX','FMG.AX','WES.AX'
-  ];
   try {
-    const quotes = await yahooQuote(MOVER_POOL);
-    if (quotes.length > 0) {
-      const mapped = quotes
-        .filter(q => q.regularMarketChangePercent != null)
-        .map(q => ({
+    const [gainRes, loseRes] = await Promise.all([
+      fetch('https://financialmodelingprep.com/stable/market-biggest-gainers?apikey='+FMP_KEY),
+      fetch('https://financialmodelingprep.com/stable/market-biggest-losers?apikey='+FMP_KEY),
+    ]);
+    if (gainRes.ok && loseRes.ok) {
+      const gainers = await gainRes.json();
+      const losers  = await loseRes.json();
+      const gArr = Array.isArray(gainers) ? gainers : [];
+      const lArr = Array.isArray(losers)  ? losers  : [];
+      if (gArr.length > 0) {
+        const mapM = q => ({
           sym:    q.symbol,
-          name:   q.shortName || q.longName || q.symbol,
-          price:  toAUD(q.regularMarketPrice || 0, q.currency || 'USD'),
-          change: +(q.regularMarketChangePercent || 0).toFixed(2),
-        }));
-      const sorted = [...mapped].sort((a,b) => b.change - a.change);
-      const top3 = sorted.slice(0, 3);
-      const bot3 = sorted.slice(-3).reverse();
-      document.getElementById('mkt-top').innerHTML = top3.length ? top3.map(q=>moverCard(q,'top')).join('') : moverPlaceholder();
-      document.getElementById('mkt-bot').innerHTML = bot3.length ? bot3.map(q=>moverCard(q,'bot')).join('') : moverPlaceholder();
-      // Update label based on market status
-      const isLive = mapped.some(q => q.change !== 0);
-      const label = document.getElementById('movers-label');
-      const llabel = document.getElementById('losers-label');
-      if (label) label.textContent = 'Top 3 market gainers' + (isLive ? ' (live)' : ' — last close');
-      if (llabel) llabel.textContent = 'Top 3 market losers' + (isLive ? ' (live)' : ' — last close');
-      return;
+          name:   q.name || q.symbol,
+          price:  toAUD(parseFloat(q.price||0), 'USD'),
+          change: +(parseFloat(q.changesPercentage||0)).toFixed(2),
+        });
+        const top3 = gArr.slice(0,3).map(mapM);
+        const bot3 = lArr.slice(0,3).map(mapM);
+        document.getElementById('mkt-top').innerHTML = top3.map(q=>moverCard(q,'top')).join('');
+        document.getElementById('mkt-bot').innerHTML = bot3.map(q=>moverCard(q,'bot')).join('');
+        const ml = document.getElementById('movers-label');
+        const ll = document.getElementById('losers-label');
+        if (ml) ml.textContent = 'Top 3 market gainers (live)';
+        if (ll) ll.textContent = 'Top 3 market losers (live)';
+        return;
+      }
     }
   } catch(e) { console.error('Movers error:', e); }
+  // Market closed or no data — use EOD from popular pool
+  try {
+    const pool = ['AAPL','MSFT','NVDA','GOOGL','AMZN','TSLA','META','JPM','V','AMD','NFLX','COIN','PLTR'];
+    const quotes = await yahooQuote(pool);
+    if (quotes.length) {
+      const sorted = [...quotes].sort((a,b)=>(b.regularMarketChangePercent||0)-(a.regularMarketChangePercent||0));
+      const mapM = q => ({
+        sym:    q.symbol,
+        name:   q.shortName || q.symbol,
+        price:  toAUD(q.regularMarketPrice||0, q.currency||'USD'),
+        change: +(q.regularMarketChangePercent||0).toFixed(2),
+      });
+      document.getElementById('mkt-top').innerHTML = sorted.slice(0,3).map(q=>moverCard(mapM(q),'top')).join('');
+      document.getElementById('mkt-bot').innerHTML = sorted.slice(-3).reverse().map(q=>moverCard(mapM(q),'bot')).join('');
+      const ml = document.getElementById('movers-label');
+      const ll = document.getElementById('losers-label');
+      if (ml) ml.textContent = 'Top 3 gainers — last close';
+      if (ll) ll.textContent = 'Top 3 losers — last close';
+      return;
+    }
+  } catch(e) { console.error('EOD movers error:', e); }
   document.getElementById('mkt-top').innerHTML = moverPlaceholder();
   document.getElementById('mkt-bot').innerHTML = moverPlaceholder();
 }
@@ -690,13 +713,15 @@ async function searchStock() {
     if (quotes.length) {
       found = quotes;
     } else {
-      // Fall back to Yahoo Finance search autocomplete
+      // Fall back to FMP symbol search
       try {
-        const sr = await fetch('https://query1.finance.yahoo.com/v1/finance/search?q='+encodeURIComponent(raw)+'&quotesCount=8&newsCount=0', {mode:'cors'});
+        const sr = await fetch('https://financialmodelingprep.com/stable/search-symbol?query='+encodeURIComponent(raw)+'&limit=8&apikey='+FMP_KEY);
         if (sr.ok) {
-          const sd = await sr.json();
-          const hits = (sd?.quotes||[]).filter(q=>q.quoteType&&q.quoteType!=='FUTURE').slice(0,6);
-          if (hits.length) found = await yahooQuote(hits.map(h=>h.symbol));
+          const hits = await sr.json();
+          if (Array.isArray(hits) && hits.length) {
+            const syms = hits.map(h=>h.symbol).filter(Boolean).slice(0,6);
+            if (syms.length) found = await yahooQuote(syms);
+          }
         }
       } catch(e){}
     }

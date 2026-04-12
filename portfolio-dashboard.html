@@ -365,15 +365,15 @@ const POPULAR = [
 
 // Crypto list
 const CRYPTOS = [
-  {sym:'BTC',name:'Bitcoin',cs:'BTC'},{sym:'ETH',name:'Ethereum',cs:'ETH'},
-  {sym:'BNB',name:'BNB',cs:'BNB'},{sym:'SOL',name:'Solana',cs:'SOL'},
-  {sym:'XRP',name:'XRP',cs:'XRP'},{sym:'ADA',name:'Cardano',cs:'ADA'},
-  {sym:'AVAX',name:'Avalanche',cs:'AVAX'},{sym:'DOGE',name:'Dogecoin',cs:'DOGE'},
-  {sym:'DOT',name:'Polkadot',cs:'DOT'},{sym:'MATIC',name:'Polygon',cs:'MATIC'},
-  {sym:'LINK',name:'Chainlink',cs:'LINK'},{sym:'UNI',name:'Uniswap',cs:'UNI'},
-  {sym:'LTC',name:'Litecoin',cs:'LTC'},{sym:'ATOM',name:'Cosmos',cs:'ATOM'},
-  {sym:'NEAR',name:'Near Protocol',cs:'NEAR'},{sym:'SUI',name:'Sui',cs:'SUI'},
-  {sym:'APT',name:'Aptos',cs:'APT'},{sym:'INJ',name:'Injective',cs:'INJ'},
+  {sym:'BTC',name:'Bitcoin',cs:'BTC',cg:'bitcoin'},{sym:'ETH',name:'Ethereum',cs:'ETH',cg:'ethereum'},
+  {sym:'BNB',name:'BNB',cs:'BNB',cg:'binancecoin'},{sym:'SOL',name:'Solana',cs:'SOL',cg:'solana'},
+  {sym:'XRP',name:'XRP',cs:'XRP',cg:'ripple'},{sym:'ADA',name:'Cardano',cs:'ADA',cg:'cardano'},
+  {sym:'AVAX',name:'Avalanche',cs:'AVAX',cg:'avalanche-2'},{sym:'DOGE',name:'Dogecoin',cs:'DOGE',cg:'dogecoin'},
+  {sym:'DOT',name:'Polkadot',cs:'DOT',cg:'polkadot'},{sym:'MATIC',name:'Polygon',cs:'MATIC',cg:'matic-network'},
+  {sym:'LINK',name:'Chainlink',cs:'LINK',cg:'chainlink'},{sym:'UNI',name:'Uniswap',cs:'UNI',cg:'uniswap'},
+  {sym:'LTC',name:'Litecoin',cs:'LTC',cg:'litecoin'},{sym:'ATOM',name:'Cosmos',cs:'ATOM',cg:'cosmos'},
+  {sym:'NEAR',name:'Near Protocol',cs:'NEAR',cg:'near'},{sym:'SUI',name:'Sui',cs:'SUI',cg:'sui'},
+  {sym:'APT',name:'Aptos',cs:'APT',cg:'aptos'},{sym:'INJ',name:'Injective',cs:'INJ',cg:'injective-protocol'},
 ];
 const CRYPTO_DEFAULTS = {BTC:102500,ETH:3200,BNB:900,SOL:220,XRP:0.85,ADA:0.7,
   AVAX:55,DOGE:0.28,DOT:11,MATIC:0.65,LINK:25,UNI:12,LTC:160,ATOM:10,NEAR:8,SUI:4,APT:12,INJ:25};
@@ -544,7 +544,7 @@ async function yahooQuote(syms) {
   for (let i = 0; i < syms.length; i += 50) chunks.push(syms.slice(i, i+50));
   for (const chunk of chunks) {
     try {
-      const url = 'https://financialmodelingprep.com/stable/quote?symbol='+encodeURIComponent(chunk.join(','))+'&apikey='+FMP_KEY;
+      const url = 'https://financialmodelingprep.com/api/v3/quote/'+encodeURIComponent(chunk.join(','))+'?apikey='+FMP_KEY;
       const r = await fetch(url);
       if (r.ok) {
         const d = await r.json();
@@ -575,8 +575,8 @@ async function yahooQuote(syms) {
 async function fetchMarketMovers() {
   try {
     const [gainRes, loseRes] = await Promise.all([
-      fetch('https://financialmodelingprep.com/stable/market-biggest-gainers?apikey='+FMP_KEY),
-      fetch('https://financialmodelingprep.com/stable/market-biggest-losers?apikey='+FMP_KEY),
+      fetch('https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey='+FMP_KEY),
+      fetch('https://financialmodelingprep.com/api/v3/stock_market/losers?apikey='+FMP_KEY),
     ]);
     if (gainRes.ok && loseRes.ok) {
       const gainers = await gainRes.json();
@@ -715,7 +715,7 @@ async function searchStock() {
     } else {
       // Fall back to FMP symbol search
       try {
-        const sr = await fetch('https://financialmodelingprep.com/stable/search-symbol?query='+encodeURIComponent(raw)+'&limit=8&apikey='+FMP_KEY);
+        const sr = await fetch('https://financialmodelingprep.com/api/v3/search?query='+encodeURIComponent(raw)+'&limit=8&apikey='+FMP_KEY);
         if (sr.ok) {
           const hits = await sr.json();
           if (Array.isArray(hits) && hits.length) {
@@ -845,53 +845,44 @@ async function refreshHoldingPrices() {
   snapshot();
 }
 
-// ── CoinSpot crypto prices (AUD, live) ──────────────────────────
+// ── Crypto prices (AUD, live) via CoinGecko ─────────────────────
+// CoinGecko's free /simple/price endpoint sends CORS headers, supports AUD
+// natively, and returns real 24h change — no API key required.
 async function fetchCrypto() {
   const results = {};
+  const ids = CRYPTOS.map(c => c.cg).join(',');
   try {
-    const r = await fetch('https://www.coinspot.com.au/pubapi/v2/latest');
+    const url = 'https://api.coingecko.com/api/v3/simple/price'
+      + '?ids=' + ids
+      + '&vs_currencies=aud'
+      + '&include_24hr_change=true';
+    const r = await fetch(url);
     if (r.ok) {
       const d = await r.json();
-      if (d.status === 'ok' && d.prices) {
-        CRYPTOS.forEach(c => {
-          const k = c.cs.toLowerCase();
-          if (d.prices[k]) results[c.sym] = {
-            price:  parseFloat(d.prices[k].last),
-            bid:    parseFloat(d.prices[k].bid),
-            ask:    parseFloat(d.prices[k].ask),
-            change: null
+      CRYPTOS.forEach(c => {
+        const row = d[c.cg];
+        if (row && typeof row.aud === 'number') {
+          results[c.sym] = {
+            price:  row.aud,
+            change: typeof row.aud_24h_change === 'number'
+              ? +row.aud_24h_change.toFixed(2)
+              : 0,
           };
-        });
-      }
+        }
+      });
     }
-  } catch(e) { console.error('CoinSpot error:', e); }
+  } catch(e) { console.warn('CoinGecko fetch failed:', e); }
 
-  // Fallback simulation for any missing
+  // Fallback: hold previous values (or defaults) for any missing coin
   CRYPTOS.forEach(c => {
     if (!results[c.sym]) {
-      const prev  = cryptoData[c.sym];
-      const base  = prev?.price || (CRYPTO_DEFAULTS[c.sym] || 1);
-      const delta = (Math.random() - 0.46) * 2;
-      results[c.sym] = { price: +(base * (1 + delta/100)).toFixed(6), change: null };
+      const prev = cryptoData[c.sym];
+      results[c.sym] = {
+        price:  prev?.price || (CRYPTO_DEFAULTS[c.sym] || 1),
+        change: prev?.change ?? 0,
+      };
     }
   });
-
-  // Calculate 24h change from stored price history
-  let ph = {};
-  try { ph = JSON.parse(localStorage.getItem('coinPriceHistory') || '{}'); } catch(e) {}
-  CRYPTOS.forEach(c => {
-    const d = results[c.sym]; if (!d) return;
-    if (!ph[c.sym]) ph[c.sym] = {};
-    d.change = ph[c.sym].price24h
-      ? +((d.price - ph[c.sym].price24h) / ph[c.sym].price24h * 100).toFixed(2)
-      : 0;
-    if (!ph[c.sym].ts24h || Date.now() - ph[c.sym].ts24h >= 23.5 * 3600 * 1000) {
-      ph[c.sym].price24h  = ph[c.sym].pricePrev || d.price;
-      ph[c.sym].pricePrev = d.price;
-      ph[c.sym].ts24h     = Date.now();
-    }
-  });
-  localStorage.setItem('coinPriceHistory', JSON.stringify(ph));
 
   cryptoData = results;
   renderCryptoMovers();
